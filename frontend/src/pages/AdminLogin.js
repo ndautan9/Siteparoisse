@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, User } from 'lucide-react';
+import { Lock, User, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -34,24 +34,33 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-paper flex items-center justify-center px-4" data-testid="admin-login-page">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-stone-50 flex items-center justify-center px-4" data-testid="admin-login-page">
       <div className="max-w-md w-full">
+        {/* Logo & Title */}
         <div className="text-center mb-8">
-          <h1 className="font-serif text-4xl text-slate-deep mb-2">Administration</h1>
-          <p className="text-slate-600">Connectez-vous pour gérer le contenu</p>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-gold/20 to-gold/5 mb-4 shadow-sm">
+            <img
+              src="https://customer-assets.emergentagent.com/job_c3efae68-56d0-4924-8ecf-4f7502ce3630/artifacts/34n0n91l_Notre-Dame-d-Autan.png"
+              alt="Notre Dame d'Autan"
+              className="h-10 w-auto"
+            />
+          </div>
+          <h1 className="font-serif text-3xl text-slate-800 mb-1">Administration</h1>
+          <p className="text-slate-500 text-sm">Connectez-vous pour gérer le contenu de votre paroisse</p>
         </div>
 
-        <div className="bg-white rounded-xl p-8 shadow-lg border border-slate-100">
-          <form onSubmit={handleLogin} className="space-y-6">
+        {/* Login Card */}
+        <div className="bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
+          <form onSubmit={handleLogin} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Nom d'utilisateur</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
+                  className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-gold/30 focus:border-gold/50 bg-slate-50/50 text-sm transition-all focus:bg-white"
                   placeholder="admin"
                   required
                   data-testid="admin-username-input"
@@ -62,12 +71,12 @@ const AdminLogin = () => {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Mot de passe</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
+                  className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-gold/30 focus:border-gold/50 bg-slate-50/50 text-sm transition-all focus:bg-white"
                   placeholder="••••••••"
                   required
                   data-testid="admin-password-input"
@@ -78,13 +87,26 @@ const AdminLogin = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gold hover:bg-gold-dark text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-gold to-gold-dark hover:from-gold-dark hover:to-gold text-white py-3 rounded-xl font-medium transition-all disabled:opacity-50 shadow-md shadow-gold/20 hover:shadow-lg hover:shadow-gold/30 flex items-center justify-center gap-2 group"
               data-testid="admin-login-button"
             >
-              {loading ? 'Connexion...' : 'Se connecter'}
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Connexion...
+                </>
+              ) : (
+                <>
+                  Se connecter
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </>
+              )}
             </button>
           </form>
         </div>
+
+        {/* Footer */}
+        <p className="text-center text-xs text-slate-400 mt-6">Notre Dame d'Autan — Espace administrateur</p>
       </div>
     </div>
   );

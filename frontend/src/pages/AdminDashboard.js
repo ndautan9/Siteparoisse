@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LogOut, Newspaper, Clock, Calendar, Mail, Upload, Copy, X, FileText, Repeat, LayoutDashboard, Users, Download, Eye, EyeOff, MessageSquare, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2, LogOut, Newspaper, Clock, Calendar, Mail, Upload, Copy, X, FileText, Repeat, LayoutDashboard, Users, Download, Eye, EyeOff, MessageSquare, Search, Menu, ChevronRight, Home } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { format, addWeeks, addMonths, addDays } from 'date-fns';
@@ -70,6 +70,9 @@ const AdminDashboard = () => {
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Preview state
   const [previewNews, setPreviewNews] = useState(false);
@@ -612,73 +615,148 @@ const AdminDashboard = () => {
     </div>
   );
 
+  const sidebarTabs = [
+    { id: 'dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
+    { id: 'news', icon: Newspaper, label: 'Actualités' },
+    { id: 'mass', icon: Clock, label: 'Messes' },
+    { id: 'funerals', icon: () => <ChristianCross className="w-5 h-5" />, label: 'Funérailles' },
+    { id: 'events', icon: Calendar, label: 'Événements' },
+    { id: 'letters', icon: Mail, label: 'Lettres' },
+    { id: 'messages', icon: MessageSquare, label: 'Messages', badge: stats?.messages_unread },
+    { id: 'subscribers', icon: Users, label: 'Abonnés' },
+  ];
+
+  const currentTabLabel = sidebarTabs.find(t => t.id === activeTab)?.label || 'Tableau de bord';
+
   return (
-    <div className="min-h-screen bg-paper" data-testid="admin-dashboard">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-stone-50 flex" data-testid="admin-dashboard">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`fixed lg:sticky top-0 left-0 h-screen w-[260px] bg-white border-r border-slate-200/80 z-50 flex flex-col transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+        {/* Sidebar Header - Logo */}
+        <div className="p-5 border-b border-slate-100">
+          <div className="flex items-center gap-3">
             <img
               src="https://customer-assets.emergentagent.com/job_c3efae68-56d0-4924-8ecf-4f7502ce3630/artifacts/34n0n91l_Notre-Dame-d-Autan.png"
               alt="Notre Dame d'Autan"
-              className="h-10 w-auto"
+              className="h-9 w-auto"
             />
-            <h1 className="font-serif text-xl sm:text-2xl text-slate-deep">Administration Notre Dame d'Autan</h1>
+            <div>
+              <h1 className="font-serif text-sm font-semibold text-slate-800 leading-tight">Notre Dame d'Autan</h1>
+              <p className="text-[10px] text-slate-400 font-medium">Administration</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-3 px-3">
+          <div className="space-y-0.5">
+            {sidebarTabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => { setActiveTab(tab.id); setSearchQuery(''); setSidebarOpen(false); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
+                  activeTab === tab.id
+                    ? 'bg-gradient-to-r from-gold/15 to-gold/5 text-gold shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+                data-testid={`tab-${tab.id}`}
+              >
+                <span className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+                  activeTab === tab.id ? 'bg-gold/20 text-gold' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700'
+                }`}>
+                  <tab.icon className="w-[18px] h-[18px]" />
+                </span>
+                <span className="flex-1 text-left">{tab.label}</span>
+                {tab.badge > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 animate-pulse">{tab.badge}</span>
+                )}
+                {activeTab === tab.id && (
+                  <ChevronRight className="w-4 h-4 text-gold/60" />
+                )}
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="p-3 border-t border-slate-100">
+          <div className="px-3 py-2 mb-2">
+            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">v{APP_VERSION}</p>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center space-x-2 text-slate-600 hover:text-gold transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all"
             data-testid="logout-button"
           >
-            <LogOut className="w-5 h-5" />
+            <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100">
+              <LogOut className="w-[18px] h-[18px]" />
+            </span>
             <span>Déconnexion</span>
           </button>
-          <span className="text-xs text-slate-400 ml-2">v{APP_VERSION}</span>
         </div>
-      </header>
+      </aside>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tabs */}
-        <div className="relative -mx-4 sm:mx-0">
-          <div className="flex space-x-1 mb-6 border-b border-slate-200 overflow-x-auto px-4 sm:px-0 scrollbar-hide">
-          {[
-            { id: 'dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
-            { id: 'news', icon: Newspaper, label: 'Actualités' },
-            { id: 'mass', icon: Clock, label: 'Messes' },
-            { id: 'funerals', icon: () => <ChristianCross className="w-4 h-4" />, label: 'Funérailles' },
-            { id: 'events', icon: Calendar, label: 'Événements' },
-            { id: 'letters', icon: Mail, label: 'Lettres' },
-            { id: 'messages', icon: MessageSquare, label: 'Messages', badge: stats?.messages_unread },
-            { id: 'subscribers', icon: Users, label: 'Abonnés' },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => { setActiveTab(tab.id); setSearchQuery(''); }}
-              className={`pb-3 px-3 font-medium transition-colors flex items-center space-x-2 whitespace-nowrap text-sm ${
-                activeTab === tab.id ? 'text-gold border-b-2 border-gold' : 'text-slate-600 hover:text-slate-900'
-              }`}
-              data-testid={`tab-${tab.id}`}
-            >
-              <tab.icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-              {tab.badge > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">{tab.badge}</span>
+      {/* Main Content Area */}
+      <div className="flex-1 min-h-screen flex flex-col w-0">
+        {/* Top Bar */}
+        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-30">
+          <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-2 text-sm">
+                <Home className="w-4 h-4 text-slate-400" />
+                <span className="text-slate-400">/</span>
+                <span className="font-semibold text-slate-700">{currentTabLabel}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {stats?.messages_unread > 0 && (
+                <button
+                  onClick={() => setActiveTab('messages')}
+                  className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
+                >
+                  <MessageSquare className="w-5 h-5" />
+                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{stats.messages_unread}</span>
+                </button>
               )}
-            </button>
-          ))}
+              <button
+                onClick={() => window.open('/', '_blank')}
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:bg-slate-100 border border-slate-200 transition-colors"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                Voir le site
+              </button>
+            </div>
           </div>
-        </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <div className="max-w-6xl mx-auto">
 
         {/* Search bar - shown for all tabs except dashboard */}
         {activeTab !== 'dashboard' && (
           <div className="relative mb-6" data-testid="search-bar">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Rechercher..."
-              className="w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-gold/50 focus:border-gold bg-white text-sm"
+              className="w-full pl-11 pr-10 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-gold/30 focus:border-gold/50 bg-white text-sm shadow-sm transition-shadow focus:shadow-md"
               data-testid="search-input"
             />
             {searchQuery && (
@@ -694,46 +772,57 @@ const AdminDashboard = () => {
           <div className="space-y-8" data-testid="dashboard-tab-content">
             {stats ? (
               <>
+                {/* Welcome banner */}
+                <div className="bg-gradient-to-r from-gold/10 via-gold/5 to-transparent rounded-2xl p-6 border border-gold/10">
+                  <h2 className="font-serif text-2xl text-slate-800 mb-1">Bienvenue sur votre espace</h2>
+                  <p className="text-sm text-slate-500">Gérez le contenu de votre paroisse Notre Dame d'Autan</p>
+                </div>
+
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {[
-                    { label: 'Actualités', value: stats.news, icon: Newspaper, color: 'bg-blue-50 text-blue-700', onClick: () => setActiveTab('news') },
-                    { label: 'Événements à venir', value: stats.events_upcoming, icon: Calendar, color: 'bg-emerald-50 text-emerald-700', onClick: () => setActiveTab('events') },
-                    { label: 'Horaires de messes', value: stats.mass_times, icon: Clock, color: 'bg-amber-50 text-amber-700', onClick: () => setActiveTab('mass') },
-                    { label: 'Funérailles', value: stats.funerals, icon: () => <ChristianCross className="w-6 h-6" />, color: 'bg-slate-100 text-slate-700', onClick: () => setActiveTab('funerals') },
-                    { label: 'Lettres', value: stats.letters, icon: FileText, color: 'bg-purple-50 text-purple-700', onClick: () => setActiveTab('letters') },
-                    { label: 'Abonnés newsletter', value: stats.subscribers, icon: Users, color: 'bg-teal-50 text-teal-700', onClick: () => setActiveTab('subscribers') },
-                    { label: 'Messages reçus', value: stats.messages, icon: MessageSquare, color: 'bg-indigo-50 text-indigo-700', onClick: () => setActiveTab('messages') },
-                    { label: 'Messages non lus', value: stats.messages_unread, icon: Mail, color: stats.messages_unread > 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700', onClick: () => setActiveTab('messages') },
+                    { label: 'Actualités', value: stats.news, icon: Newspaper, iconBg: 'bg-blue-100', iconColor: 'text-blue-600', onClick: () => setActiveTab('news') },
+                    { label: 'Événements à venir', value: stats.events_upcoming, icon: Calendar, iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', onClick: () => setActiveTab('events') },
+                    { label: 'Horaires de messes', value: stats.mass_times, icon: Clock, iconBg: 'bg-amber-100', iconColor: 'text-amber-600', onClick: () => setActiveTab('mass') },
+                    { label: 'Funérailles', value: stats.funerals, icon: () => <ChristianCross className="w-5 h-5" />, iconBg: 'bg-slate-100', iconColor: 'text-slate-600', onClick: () => setActiveTab('funerals') },
+                    { label: 'Lettres', value: stats.letters, icon: FileText, iconBg: 'bg-purple-100', iconColor: 'text-purple-600', onClick: () => setActiveTab('letters') },
+                    { label: 'Abonnés newsletter', value: stats.subscribers, icon: Users, iconBg: 'bg-teal-100', iconColor: 'text-teal-600', onClick: () => setActiveTab('subscribers') },
+                    { label: 'Messages reçus', value: stats.messages, icon: MessageSquare, iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600', onClick: () => setActiveTab('messages') },
+                    { label: 'Messages non lus', value: stats.messages_unread, icon: Mail, iconBg: stats.messages_unread > 0 ? 'bg-red-100' : 'bg-green-100', iconColor: stats.messages_unread > 0 ? 'text-red-600' : 'text-green-600', onClick: () => setActiveTab('messages') },
                   ].map((stat, idx) => (
                     <button
                       key={idx}
                       onClick={stat.onClick}
-                      className={`${stat.color} rounded-xl p-5 text-left transition-all hover:shadow-md hover:scale-[1.02] border border-transparent hover:border-slate-200`}
+                      className="bg-white rounded-2xl p-5 text-left transition-all duration-200 hover:shadow-lg hover:shadow-slate-200/50 hover:-translate-y-0.5 border border-slate-100 group"
                       data-testid={`stat-card-${idx}`}
                     >
-                      <stat.icon className="w-6 h-6 mb-3 opacity-70" />
-                      <p className="text-3xl font-bold mb-1">{stat.value}</p>
-                      <p className="text-sm opacity-80 font-medium">{stat.label}</p>
+                      <div className={`w-10 h-10 ${stat.iconBg} ${stat.iconColor} rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110`}>
+                        <stat.icon className="w-5 h-5" />
+                      </div>
+                      <p className="text-3xl font-bold text-slate-800 mb-1">{stat.value}</p>
+                      <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
                     </button>
                   ))}
                 </div>
 
                 {/* Recent messages preview */}
                 {contactMessages.length > 0 && (
-                  <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-serif text-xl text-slate-deep">Derniers messages</h3>
-                      <button onClick={() => setActiveTab('messages')} className="text-sm text-gold hover:text-gold-dark font-medium">Voir tout</button>
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                    <div className="flex items-center justify-between mb-5">
+                      <h3 className="font-serif text-xl text-slate-800">Derniers messages</h3>
+                      <button onClick={() => setActiveTab('messages')} className="text-sm text-gold hover:text-gold-dark font-medium flex items-center gap-1 transition-colors">
+                        Voir tout
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
                     </div>
                     <div className="space-y-3">
                       {contactMessages.slice(0, 3).map(msg => (
-                        <div key={msg.id} className={`p-3 rounded-lg border ${msg.read ? 'border-slate-100 bg-white' : 'border-gold/30 bg-gold/5'}`}>
+                        <div key={msg.id} className={`p-4 rounded-xl border transition-colors ${msg.read ? 'border-slate-100 bg-slate-50/50 hover:bg-slate-50' : 'border-gold/30 bg-gradient-to-r from-gold/5 to-transparent'}`}>
                           <div className="flex items-center justify-between mb-1">
                             <p className="font-medium text-slate-900 text-sm">{msg.name} <span className="text-slate-400 font-normal">({msg.email})</span></p>
-                            {!msg.read && <span className="text-[10px] font-bold text-white bg-red-500 rounded-full px-2 py-0.5">Nouveau</span>}
+                            {!msg.read && <span className="text-[10px] font-bold text-white bg-red-500 rounded-full px-2 py-0.5 animate-pulse">Nouveau</span>}
                           </div>
                           <p className="text-sm font-medium text-slate-700">{msg.subject}</p>
-                          <p className="text-xs text-slate-500 line-clamp-1">{msg.message}</p>
+                          <p className="text-xs text-slate-500 line-clamp-1 mt-1">{msg.message}</p>
                         </div>
                       ))}
                     </div>
@@ -741,7 +830,10 @@ const AdminDashboard = () => {
                 )}
               </>
             ) : (
-              <p className="text-slate-500">Chargement des statistiques...</p>
+              <div className="flex items-center justify-center py-20">
+                <div className="w-8 h-8 border-3 border-gold border-t-transparent rounded-full animate-spin"></div>
+                <span className="ml-3 text-slate-500">Chargement...</span>
+              </div>
             )}
           </div>
         )}
@@ -750,8 +842,8 @@ const AdminDashboard = () => {
         {activeTab === 'news' && (
           <div className="space-y-8">
             {/* Form */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
-              <h2 className="font-serif text-2xl text-slate-deep mb-6">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+              <h2 className="font-serif text-2xl text-slate-800 mb-6">
                 {editingNews ? 'Éditer l\'actualité' : 'Nouvelle actualité'}
               </h2>
               <form onSubmit={handleNewsSubmit} className="space-y-4">
@@ -977,7 +1069,7 @@ const AdminDashboard = () => {
             {/* News List */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-serif text-xl text-slate-deep">Actualités publiées</h3>
+                <h3 className="font-serif text-xl text-slate-800">Actualités publiées</h3>
                 {q && <span className="text-sm text-slate-500">{filteredNews.length}/{news.length} résultat(s)</span>}
               </div>
               {loading ? (
@@ -990,7 +1082,7 @@ const AdminDashboard = () => {
                 {filteredNews.map((item) => (
                   <div
                     key={item.id}
-                    className={`bg-white rounded-lg p-4 border flex justify-between items-start ${selectedNews.includes(item.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`}
+                    className={`bg-white rounded-xl p-4 border flex justify-between items-start ${selectedNews.includes(item.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`}
                     data-testid={`news-item-${item.id}`}
                   >
                     <div className="flex items-start gap-3 flex-1 min-w-0 overflow-hidden">
@@ -1045,8 +1137,8 @@ const AdminDashboard = () => {
         {activeTab === 'mass' && (
           <div className="space-y-8">
             {/* Form */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
-              <h2 className="font-serif text-2xl text-slate-deep mb-6">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+              <h2 className="font-serif text-2xl text-slate-800 mb-6">
                 {editingMass ? 'Éditer l\'horaire' : 'Nouvel horaire'}
               </h2>
               <form onSubmit={handleMassSubmit} className="space-y-4">
@@ -1188,7 +1280,7 @@ const AdminDashboard = () => {
             {/* Mass Times List */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-serif text-xl text-slate-deep">Horaires configurés</h3>
+                <h3 className="font-serif text-xl text-slate-800">Horaires configurés</h3>
                 {q && <span className="text-sm text-slate-500">{filteredMass.length}/{massTimes.length} résultat(s)</span>}
               </div>
               {loading ? (
@@ -1213,7 +1305,7 @@ const AdminDashboard = () => {
                       </div>
                     )}
                   <div
-                    className={`bg-white rounded-lg p-4 border flex justify-between items-center ${selectedMass.includes(item.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`}
+                    className={`bg-white rounded-xl p-4 border flex justify-between items-center ${selectedMass.includes(item.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`}
                     data-testid={`mass-item-${item.id}`}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -1269,8 +1361,8 @@ const AdminDashboard = () => {
         {activeTab === 'funerals' && (
           <div className="space-y-8">
             {/* Form */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
-              <h3 className="font-serif text-xl text-slate-deep mb-6">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+              <h3 className="font-serif text-xl text-slate-800 mb-6">
                 {editingFuneral ? 'Modifier la cérémonie' : 'Ajouter une cérémonie'}
               </h3>
               <form onSubmit={handleSubmitFuneral} className="space-y-4">
@@ -1376,7 +1468,7 @@ const AdminDashboard = () => {
             {/* Funerals List */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-serif text-xl text-slate-deep">Cérémonies programmées</h3>
+                <h3 className="font-serif text-xl text-slate-800">Cérémonies programmées</h3>
                 {q && <span className="text-sm text-slate-500">{filteredFunerals.length}/{funerals.length} résultat(s)</span>}
               </div>
               {loading ? (
@@ -1389,7 +1481,7 @@ const AdminDashboard = () => {
                 {filteredFunerals.map((item) => (
                   <div
                     key={item.id}
-                    className={`bg-white rounded-lg p-4 border flex justify-between items-center ${selectedFunerals.includes(item.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`}
+                    className={`bg-white rounded-xl p-4 border flex justify-between items-center ${selectedFunerals.includes(item.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`}
                     data-testid={`funeral-item-${item.id}`}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -1434,8 +1526,8 @@ const AdminDashboard = () => {
         {/* EVENTS TAB */}
         {activeTab === 'events' && (
           <div className="space-y-8">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
-              <h2 className="font-serif text-2xl text-slate-deep mb-6">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+              <h2 className="font-serif text-2xl text-slate-800 mb-6">
                 {editingEvent ? "Modifier l'événement" : 'Nouvel événement'}
               </h2>
               <form onSubmit={handleEventSubmit} className="space-y-4">
@@ -1606,7 +1698,7 @@ const AdminDashboard = () => {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-serif text-xl text-slate-deep">Tous les événements</h3>
+                <h3 className="font-serif text-xl text-slate-800">Tous les événements</h3>
                 {q && <span className="text-sm text-slate-500">{filteredEvents.length}/{events.length} résultat(s)</span>}
               </div>
               {loading ? (
@@ -1619,7 +1711,7 @@ const AdminDashboard = () => {
                 {filteredEvents.map((item) => (
                   <div
                     key={item.id}
-                    className={`bg-white rounded-lg p-4 border flex justify-between items-start ${selectedEvents.includes(item.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`}
+                    className={`bg-white rounded-xl p-4 border flex justify-between items-start ${selectedEvents.includes(item.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`}
                     data-testid={`event-item-${item.id}`}
                   >
                     <div className="flex items-start gap-3 flex-1 min-w-0 overflow-hidden">
@@ -1673,8 +1765,8 @@ const AdminDashboard = () => {
         {/* LETTERS TAB */}
         {activeTab === 'letters' && (
           <div className="space-y-8">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
-              <h2 className="font-serif text-2xl text-slate-deep mb-6">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+              <h2 className="font-serif text-2xl text-slate-800 mb-6">
                 {editingLetter ? 'Modifier la lettre' : 'Nouvelle lettre'}
               </h2>
               <form onSubmit={handleLetterSubmit} className="space-y-4">
@@ -1815,7 +1907,7 @@ const AdminDashboard = () => {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-serif text-xl text-slate-deep">Lettres publiées</h3>
+                <h3 className="font-serif text-xl text-slate-800">Lettres publiées</h3>
                 {q && <span className="text-sm text-slate-500">{filteredLetters.length}/{letters.length} résultat(s)</span>}
               </div>
               {loading ? (
@@ -1828,7 +1920,7 @@ const AdminDashboard = () => {
                 {filteredLetters.map((item) => (
                   <div
                     key={item.id}
-                    className={`bg-white rounded-lg p-4 border flex justify-between items-start ${selectedLetters.includes(item.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`}
+                    className={`bg-white rounded-xl p-4 border flex justify-between items-start ${selectedLetters.includes(item.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`}
                     data-testid={`letter-item-${item.id}`}
                   >
                     <div className="flex items-start gap-3 flex-1">
@@ -1885,7 +1977,7 @@ const AdminDashboard = () => {
         {activeTab === 'messages' && (
           <div className="space-y-4" data-testid="messages-tab-content">
             <div className="flex items-center justify-between">
-              <h3 className="font-serif text-xl text-slate-deep">Messages de contact</h3>
+              <h3 className="font-serif text-xl text-slate-800">Messages de contact</h3>
               <span className="text-sm text-slate-500">{q ? `${filteredMessages.length}/${contactMessages.length}` : contactMessages.length} message(s)</span>
             </div>
             {loading ? (
@@ -1895,7 +1987,7 @@ const AdminDashboard = () => {
             ) : (
               <div className="space-y-3">
                 {filteredMessages.map(msg => (
-                  <div key={msg.id} className={`bg-white rounded-lg p-5 border transition-colors ${msg.read ? 'border-slate-100' : 'border-gold/40 bg-gold/5'}`} data-testid={`message-item-${msg.id}`}>
+                  <div key={msg.id} className={`bg-white rounded-xl p-5 border transition-all hover:shadow-sm ${msg.read ? 'border-slate-100' : 'border-gold/40 bg-gold/5'}`} data-testid={`message-item-${msg.id}`}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -1939,7 +2031,7 @@ const AdminDashboard = () => {
         {activeTab === 'subscribers' && (
           <div className="space-y-4" data-testid="subscribers-tab-content">
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <h3 className="font-serif text-xl text-slate-deep">Abonnés newsletter</h3>
+              <h3 className="font-serif text-xl text-slate-800">Abonnés newsletter</h3>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-500">{q ? `${filteredSubscribers.length}/${subscribers.length}` : subscribers.length} abonné(s)</span>
                 {subscribers.length > 0 && (
@@ -1962,7 +2054,7 @@ const AdminDashboard = () => {
               <>
                 <BulkBar selected={selectedSubscribers} setSelected={setSelectedSubscribers} items={filteredSubscribers} endpoint="subscribers" label="abonnés" />
                 {filteredSubscribers.map(sub => (
-                  <div key={sub.id} className={`bg-white rounded-lg p-4 border flex justify-between items-center ${selectedSubscribers.includes(sub.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`} data-testid={`subscriber-item-${sub.id}`}>
+                  <div key={sub.id} className={`bg-white rounded-xl p-4 border flex justify-between items-center ${selectedSubscribers.includes(sub.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`} data-testid={`subscriber-item-${sub.id}`}>
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <input
                         type="checkbox"
@@ -1988,6 +2080,9 @@ const AdminDashboard = () => {
             )}
           </div>
         )}
+
+          </div>
+        </main>
       </div>
     </div>
   );
