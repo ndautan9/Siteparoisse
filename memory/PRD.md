@@ -55,8 +55,8 @@ Full-stack parish website for "Notre Dame d'Autan" (Castanet-Tolosan, Saint-Oren
   - Needs: GA4 Measurement ID (G-XXXXXXXXXX)
 
 ### P2 (Suggested improvements)
-- Search/filter in CMS lists
-- Responsive tabs for mobile (scrollable)
+- ~~Search/filter in CMS lists~~ ✅ Implemented (search bar in all tabs)
+- ~~Responsive tabs for mobile~~ ✅ Implemented (horizontal scroll, hidden scrollbar)
 - Content preview before publishing
 - Status indicators (past/upcoming events, published/draft)
 - Extract modal logic into reusable EventModal component

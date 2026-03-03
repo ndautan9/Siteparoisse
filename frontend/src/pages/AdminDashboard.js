@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, LogOut, Newspaper, Clock, Calendar, Mail, Upload, Copy, X, FileText, Repeat, LayoutDashboard, Users, Download, Eye, MessageSquare } from 'lucide-react';
+import { Plus, Edit2, Trash2, LogOut, Newspaper, Clock, Calendar, Mail, Upload, Copy, X, FileText, Repeat, LayoutDashboard, Users, Download, Eye, MessageSquare, Search } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { format, addWeeks, addMonths, addDays } from 'date-fns';
@@ -67,6 +67,9 @@ const AdminDashboard = () => {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [dragOverImage, setDragOverImage] = useState(false);
   const [dragOverFile, setDragOverFile] = useState(false);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
 
   const NEWS_CATEGORIES = [
     'Actualité',
@@ -515,6 +518,38 @@ const AdminDashboard = () => {
     toast.success('Export CSV téléchargé');
   };
 
+  // Strip HTML helper for search
+  const stripHtml = (html) => {
+    if (!html) return '';
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return (tmp.textContent || '').replace(/\u00A0/g, ' ').toLowerCase();
+  };
+
+  // Filtered lists based on search
+  const q = searchQuery.toLowerCase().trim();
+  const filteredNews = useMemo(() => !q ? news : news.filter(n =>
+    n.title?.toLowerCase().includes(q) || stripHtml(n.content).includes(q) || n.category?.toLowerCase().includes(q)
+  ), [news, q]);
+  const filteredMass = useMemo(() => !q ? massTimes : massTimes.filter(m =>
+    m.location?.toLowerCase().includes(q) || m.mass_type?.toLowerCase().includes(q) || m.day?.toLowerCase().includes(q) || m.time?.includes(q)
+  ), [massTimes, q]);
+  const filteredFunerals = useMemo(() => !q ? funerals : funerals.filter(f =>
+    f.deceased_name?.toLowerCase().includes(q) || f.location?.toLowerCase().includes(q) || f.ceremony_type?.toLowerCase().includes(q)
+  ), [funerals, q]);
+  const filteredEvents = useMemo(() => !q ? events : events.filter(e =>
+    e.title?.toLowerCase().includes(q) || stripHtml(e.description).includes(q) || e.location?.toLowerCase().includes(q) || e.category?.toLowerCase().includes(q)
+  ), [events, q]);
+  const filteredLetters = useMemo(() => !q ? letters : letters.filter(l =>
+    l.title?.toLowerCase().includes(q) || stripHtml(l.content).includes(q)
+  ), [letters, q]);
+  const filteredMessages = useMemo(() => !q ? contactMessages : contactMessages.filter(m =>
+    m.name?.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q) || m.subject?.toLowerCase().includes(q) || m.message?.toLowerCase().includes(q)
+  ), [contactMessages, q]);
+  const filteredSubscribers = useMemo(() => !q ? subscribers : subscribers.filter(s =>
+    s.email?.toLowerCase().includes(q)
+  ), [subscribers, q]);
+
   const formatDate = (dateString) => {
     try {
       return format(new Date(dateString), 'dd/MM/yyyy à HH:mm', { locale: fr });
@@ -599,12 +634,13 @@ const AdminDashboard = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tabs */}
-        <div className="flex space-x-1 mb-8 border-b border-slate-200 overflow-x-auto pb-px">
+        <div className="relative -mx-4 sm:mx-0">
+          <div className="flex space-x-1 mb-6 border-b border-slate-200 overflow-x-auto px-4 sm:px-0 scrollbar-hide">
           {[
             { id: 'dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
             { id: 'news', icon: Newspaper, label: 'Actualités' },
             { id: 'mass', icon: Clock, label: 'Messes' },
-            { id: 'funerals', icon: () => <ChristianCross className="w-5 h-5" />, label: 'Funérailles' },
+            { id: 'funerals', icon: () => <ChristianCross className="w-4 h-4" />, label: 'Funérailles' },
             { id: 'events', icon: Calendar, label: 'Événements' },
             { id: 'letters', icon: Mail, label: 'Lettres' },
             { id: 'messages', icon: MessageSquare, label: 'Messages', badge: stats?.messages_unread },
@@ -612,7 +648,7 @@ const AdminDashboard = () => {
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => { setActiveTab(tab.id); setSearchQuery(''); }}
               className={`pb-3 px-3 font-medium transition-colors flex items-center space-x-2 whitespace-nowrap text-sm ${
                 activeTab === tab.id ? 'text-gold border-b-2 border-gold' : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -625,7 +661,28 @@ const AdminDashboard = () => {
               )}
             </button>
           ))}
+          </div>
         </div>
+
+        {/* Search bar - shown for all tabs except dashboard */}
+        {activeTab !== 'dashboard' && (
+          <div className="relative mb-6" data-testid="search-bar">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher..."
+              className="w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-gold/50 focus:border-gold bg-white text-sm"
+              data-testid="search-input"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        )}
 
         {/* DASHBOARD TAB */}
         {activeTab === 'dashboard' && (
@@ -882,15 +939,18 @@ const AdminDashboard = () => {
 
             {/* News List */}
             <div className="space-y-4">
-              <h3 className="font-serif text-xl text-slate-deep">Actualités publiées</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-serif text-xl text-slate-deep">Actualités publiées</h3>
+                {q && <span className="text-sm text-slate-500">{filteredNews.length}/{news.length} résultat(s)</span>}
+              </div>
               {loading ? (
                 <p>Chargement...</p>
-              ) : news.length === 0 ? (
-                <p className="text-slate-500">Aucune actualité</p>
+              ) : filteredNews.length === 0 ? (
+                <p className="text-slate-500">{q ? 'Aucun résultat pour cette recherche' : 'Aucune actualité'}</p>
               ) : (
                 <>
-                <BulkBar selected={selectedNews} setSelected={setSelectedNews} items={news} endpoint="news" label="actualités" />
-                {news.map((item) => (
+                <BulkBar selected={selectedNews} setSelected={setSelectedNews} items={filteredNews} endpoint="news" label="actualités" />
+                {filteredNews.map((item) => (
                   <div
                     key={item.id}
                     className={`bg-white rounded-lg p-4 border flex justify-between items-start ${selectedNews.includes(item.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`}
@@ -1083,16 +1143,19 @@ const AdminDashboard = () => {
 
             {/* Mass Times List */}
             <div className="space-y-4">
-              <h3 className="font-serif text-xl text-slate-deep">Horaires configurés</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-serif text-xl text-slate-deep">Horaires configurés</h3>
+                {q && <span className="text-sm text-slate-500">{filteredMass.length}/{massTimes.length} résultat(s)</span>}
+              </div>
               {loading ? (
                 <p>Chargement...</p>
-              ) : massTimes.length === 0 ? (
-                <p className="text-slate-500">Aucun horaire</p>
+              ) : filteredMass.length === 0 ? (
+                <p className="text-slate-500">{q ? 'Aucun résultat pour cette recherche' : 'Aucun horaire'}</p>
               ) : (
                 <>
-                <BulkBar selected={selectedMass} setSelected={setSelectedMass} items={massTimes} endpoint="mass-times" label="horaires" />
-                {massTimes.map((item, idx) => {
-                  const prevDate = idx > 0 ? massTimes[idx - 1].date : null;
+                <BulkBar selected={selectedMass} setSelected={setSelectedMass} items={filteredMass} endpoint="mass-times" label="horaires" />
+                {filteredMass.map((item, idx) => {
+                  const prevDate = idx > 0 ? filteredMass[idx - 1].date : null;
                   const showDateHeader = item.date && item.date !== prevDate;
                   return (
                   <div key={item.id}>
@@ -1268,15 +1331,18 @@ const AdminDashboard = () => {
 
             {/* Funerals List */}
             <div className="space-y-4">
-              <h3 className="font-serif text-xl text-slate-deep">Cérémonies programmées</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-serif text-xl text-slate-deep">Cérémonies programmées</h3>
+                {q && <span className="text-sm text-slate-500">{filteredFunerals.length}/{funerals.length} résultat(s)</span>}
+              </div>
               {loading ? (
                 <p>Chargement...</p>
-              ) : funerals.length === 0 ? (
-                <p className="text-slate-500">Aucune cérémonie</p>
+              ) : filteredFunerals.length === 0 ? (
+                <p className="text-slate-500">{q ? 'Aucun résultat pour cette recherche' : 'Aucune cérémonie'}</p>
               ) : (
                 <>
-                <BulkBar selected={selectedFunerals} setSelected={setSelectedFunerals} items={funerals} endpoint="funerals" label="funérailles" />
-                {funerals.map((item) => (
+                <BulkBar selected={selectedFunerals} setSelected={setSelectedFunerals} items={filteredFunerals} endpoint="funerals" label="funérailles" />
+                {filteredFunerals.map((item) => (
                   <div
                     key={item.id}
                     className={`bg-white rounded-lg p-4 border flex justify-between items-center ${selectedFunerals.includes(item.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`}
@@ -1463,15 +1529,18 @@ const AdminDashboard = () => {
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-serif text-xl text-slate-deep">Tous les événements</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-serif text-xl text-slate-deep">Tous les événements</h3>
+                {q && <span className="text-sm text-slate-500">{filteredEvents.length}/{events.length} résultat(s)</span>}
+              </div>
               {loading ? (
                 <p>Chargement...</p>
-              ) : events.length === 0 ? (
-                <p className="text-slate-500">Aucun événement</p>
+              ) : filteredEvents.length === 0 ? (
+                <p className="text-slate-500">{q ? 'Aucun résultat pour cette recherche' : 'Aucun événement'}</p>
               ) : (
                 <>
-                <BulkBar selected={selectedEvents} setSelected={setSelectedEvents} items={events} endpoint="events" label="événements" />
-                {events.map((item) => (
+                <BulkBar selected={selectedEvents} setSelected={setSelectedEvents} items={filteredEvents} endpoint="events" label="événements" />
+                {filteredEvents.map((item) => (
                   <div
                     key={item.id}
                     className={`bg-white rounded-lg p-4 border flex justify-between items-start ${selectedEvents.includes(item.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`}
@@ -1664,15 +1733,18 @@ const AdminDashboard = () => {
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-serif text-xl text-slate-deep">Lettres publiées</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-serif text-xl text-slate-deep">Lettres publiées</h3>
+                {q && <span className="text-sm text-slate-500">{filteredLetters.length}/{letters.length} résultat(s)</span>}
+              </div>
               {loading ? (
                 <p>Chargement...</p>
-              ) : letters.length === 0 ? (
-                <p className="text-slate-500">Aucune lettre publiée</p>
+              ) : filteredLetters.length === 0 ? (
+                <p className="text-slate-500">{q ? 'Aucun résultat pour cette recherche' : 'Aucune lettre publiée'}</p>
               ) : (
                 <>
-                <BulkBar selected={selectedLetters} setSelected={setSelectedLetters} items={letters} endpoint="letters" label="lettres" />
-                {letters.map((item) => (
+                <BulkBar selected={selectedLetters} setSelected={setSelectedLetters} items={filteredLetters} endpoint="letters" label="lettres" />
+                {filteredLetters.map((item) => (
                   <div
                     key={item.id}
                     className={`bg-white rounded-lg p-4 border flex justify-between items-start ${selectedLetters.includes(item.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`}
@@ -1733,15 +1805,15 @@ const AdminDashboard = () => {
           <div className="space-y-4" data-testid="messages-tab-content">
             <div className="flex items-center justify-between">
               <h3 className="font-serif text-xl text-slate-deep">Messages de contact</h3>
-              <span className="text-sm text-slate-500">{contactMessages.length} message(s)</span>
+              <span className="text-sm text-slate-500">{q ? `${filteredMessages.length}/${contactMessages.length}` : contactMessages.length} message(s)</span>
             </div>
             {loading ? (
               <p>Chargement...</p>
-            ) : contactMessages.length === 0 ? (
-              <p className="text-slate-500">Aucun message reçu</p>
+            ) : filteredMessages.length === 0 ? (
+              <p className="text-slate-500">{q ? 'Aucun résultat pour cette recherche' : 'Aucun message reçu'}</p>
             ) : (
               <div className="space-y-3">
-                {contactMessages.map(msg => (
+                {filteredMessages.map(msg => (
                   <div key={msg.id} className={`bg-white rounded-lg p-5 border transition-colors ${msg.read ? 'border-slate-100' : 'border-gold/40 bg-gold/5'}`} data-testid={`message-item-${msg.id}`}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
@@ -1788,7 +1860,7 @@ const AdminDashboard = () => {
             <div className="flex items-center justify-between flex-wrap gap-3">
               <h3 className="font-serif text-xl text-slate-deep">Abonnés newsletter</h3>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-500">{subscribers.length} abonné(s)</span>
+                <span className="text-sm text-slate-500">{q ? `${filteredSubscribers.length}/${subscribers.length}` : subscribers.length} abonné(s)</span>
                 {subscribers.length > 0 && (
                   <button
                     onClick={exportSubscribersCSV}
@@ -1803,12 +1875,12 @@ const AdminDashboard = () => {
             </div>
             {loading ? (
               <p>Chargement...</p>
-            ) : subscribers.length === 0 ? (
-              <p className="text-slate-500">Aucun abonné</p>
+            ) : filteredSubscribers.length === 0 ? (
+              <p className="text-slate-500">{q ? 'Aucun résultat pour cette recherche' : 'Aucun abonné'}</p>
             ) : (
               <>
-                <BulkBar selected={selectedSubscribers} setSelected={setSelectedSubscribers} items={subscribers} endpoint="subscribers" label="abonnés" />
-                {subscribers.map(sub => (
+                <BulkBar selected={selectedSubscribers} setSelected={setSelectedSubscribers} items={filteredSubscribers} endpoint="subscribers" label="abonnés" />
+                {filteredSubscribers.map(sub => (
                   <div key={sub.id} className={`bg-white rounded-lg p-4 border flex justify-between items-center ${selectedSubscribers.includes(sub.id) ? 'border-gold bg-gold/5' : 'border-slate-100'}`} data-testid={`subscriber-item-${sub.id}`}>
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <input
