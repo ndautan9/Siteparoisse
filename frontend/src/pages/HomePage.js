@@ -10,7 +10,7 @@ const CURE_IMG = 'https://customer-assets.emergentagent.com/job_513c9844-285f-48
 const HomePage = () => {
   return (
     <div data-testid="home-page">
-      <SEO title="Accueil" description="Paroisse Notre Dame d'Autan - Communauté paroissiale vivante et accueillante au service de la foi et de la fraternité. Castanet-Tolosan, Saint-Orens et environs." />
+      <SEO raw title="Paroisse Notre Dame d'Autan | Accueil" description="Paroisse Notre Dame d'Autan - Communauté paroissiale vivante et accueillante au service de la foi et de la fraternité. Castanet-Tolosan, Saint-Orens et environs." />
       <Hero />
       <FadeIn>
         <NewsSection />
